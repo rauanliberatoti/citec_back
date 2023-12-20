@@ -14,8 +14,10 @@ on:
 env:
     GIT_DEPTH: '3'
     VERSAO: '1.10'
+    ServerPathScriptsHomol: "/opt/scripts/homol/ictec-backend-homol"
     ServerPathhomol: "/opt/sistemas/homol/ictec_backend"
     CECompressedhomol: build-ictec-homol.tar.gz
+    ServerPathScriptsProd: "/opt/scripts/prod/ictec-backend-prod"
     ServerPathprod: "/opt/sistemas/prod/ictec_back"
     CECompressedprod: build-ictec-prod.tar.gz
 
@@ -61,13 +63,13 @@ jobs:
      - run: mv vite.config.js pacote/vite.config.js
      - run: tar -czf ${CECompressedhomol} -C pacote/ .
      - run: scp -v ${CECompressedhomol} ${{ secrets.DEPLOY_USER_ICTEC }}@${{ secrets.DEPLOY_HOST_ICTEC }}:/tmp
-     - run: ssh ${{ secrets.DEPLOY_USER_ICTEC }}@${{ secrets.DEPLOY_HOST_ICTEC }} "mkdir -p /tmp/deploy && tar -xzf /tmp/${CECompressedhomol} -C /tmp/deploy/ && rsync -a /tmp/deploy/ ${ServerPathhomol} && rm -rf /tmp/deploy/* && rm -rf /tmp/${CECompressedhomol} && cd /opt/scripts/homol/ictec-backend-homol && docker-compose down && docker-compose up -d "
+     - run: ssh ${{ secrets.DEPLOY_USER_ICTEC }}@${{ secrets.DEPLOY_HOST_ICTEC }} "mkdir -p /tmp/deploy && tar -xzf /tmp/${CECompressedhomol} -C /tmp/deploy/ && rsync -a /tmp/deploy/ ${ServerPathhomol} && rm -rf /tmp/deploy/* && rm -rf /tmp/${CECompressedhomol} && cd ${ServerPathScriptsHomol} && docker-compose down && docker-compose up -d "
 
 
 
   build_and_deploy_prod:
      runs-on: ubuntu-latest
-     if:  ${{contains(github.ref, 'embalagem-prod')}}
+     if:  ${{contains(github.ref, 'ictec-prod')}}
      timeout-minutes: 60
      steps:
      - uses: actions/checkout@v3
@@ -81,7 +83,7 @@ jobs:
         php composer.phar install -o --ignore-platform-reqs
      - uses: webfactory/ssh-agent@v0.7.0
        with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_EMBALAGEM }}
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_ICTEC }}
      - run: echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
      - run: mkdir pacote
      - run: cp -au .env.prod .env
@@ -98,15 +100,12 @@ jobs:
      - run: mv database pacote/database
      - run: mv lang pacote/lang 
      - run: mv public pacote/public
-     - run: mv package-lock.json pacote/package-lock.json
      - run: mv package.json pacote/package.json
      - run: mv phpunit.xml pacote/phpunit.xml
-     - run: mv postcss.config.js pacote/postcss.config.js
      - run: mv resources pacote/resources
      - run: mv routes pacote/routes
-     - run: mv tailwind.config.js pacote/tailwind.config.js
      - run: mv tests pacote/tests
      - run: mv vite.config.js pacote/vite.config.js
      - run: tar -czf ${CECompressedprod} -C pacote/ .
-     - run: scp -v build-casaembalagem-prod.tar.gz ${{ secrets.DEPLOY_USER_EMBALAGEM }}@${{ secrets.DEPLOY_HOST_EMBALAGEM }}:/tmp
-     - run: ssh ${{ secrets.DEPLOY_USER_EMBALAGEM }}@${{ secrets.DEPLOY_HOST_EMBALAGEM }} " tar -xzf /tmp/${CECompressedprod} -C /tmp/deploy/ && rsync -a /tmp/deploy/ ${ServerPathprod} && rm -rf /tmp/deploy/* && rm -rf /tmp/${CECompressedprod} && cd /opt/scripts/prod/embalagens-backend-prod && docker-compose down && docker-compose up -d "
+     - run: scp -v ${CECompressedprod} ${{ secrets.DEPLOY_USER_ICTEC }}@${{ secrets.DEPLOY_HOST_ICTEC }}:/tmp
+     - run: ssh ${{ secrets.DEPLOY_USER_ICTEC }}@${{ secrets.DEPLOY_HOST_ICTEC }} " tar -xzf /tmp/${CECompressedprod} -C /tmp/deploy/ && rsync -a /tmp/deploy/ ${ServerPathprod} && rm -rf /tmp/deploy/* && rm -rf /tmp/${CECompressedprod} && cd ${ServerPathScriptsProd} && docker-compose down && docker-compose up -d "
